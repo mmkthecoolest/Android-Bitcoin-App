@@ -2,22 +2,21 @@ package com.example.codingtestpreview;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.graphics.Color;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
 import com.github.mikephil.charting.charts.LineChart;
-import com.github.mikephil.charting.charts.PieChart;
-import com.github.mikephil.charting.components.AxisBase;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
-import com.github.mikephil.charting.data.PieEntry;
-import com.github.mikephil.charting.formatter.IAxisValueFormatter;
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
@@ -25,59 +24,36 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 
 public class MainActivity extends AppCompatActivity {
 
-    LineChart lineChart;
-
-    public class DownloadHTML extends AsyncTask<String, Void, String> {
-        @Override
-        protected String doInBackground(String... strings) {
-            //string... means multiple string params
-            // Log.i("URL", strings[0]);
-//            String result = "";//html content
-            StringBuilder sb = new StringBuilder();
-            URL url;
-            HttpURLConnection urlConnection = null;//think of it like a browser window
-
-            try {
-                url = new URL(strings[0]);
-                urlConnection = (HttpURLConnection) url.openConnection();
-
-                InputStream in = urlConnection.getInputStream();//stream to hold the input of data
-                InputStreamReader inputStreamReader = new InputStreamReader(in);
-                BufferedReader b = new BufferedReader(inputStreamReader);
-
-//                int data = inputStreamReader.read();//keeps track of location of reader in HTML
-
-//                while (data != -1){//data keeps increasing as it goes on and after finishing has value of -1
-//                    char current = (char) data;
-//                    result += current;
-//
-//                    data = inputStreamReader.read();
-//                }
-
-                for (String line; (line = b.readLine()) != null; ) {
-                    sb.append(line).append("\n");
-                }
-
-                return sb.toString();
-            } catch (Exception e) {
-                e.printStackTrace();
-                toaster("Cannot interpret JSON data", true);
-                return "Failed";
-            }
+    static private LineChart lineChart;
+    private final static String TAG = "MainActivity";
 
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater menuInflater = this.getMenuInflater();
+        menuInflater.inflate(R.menu.menu, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        super.onOptionsItemSelected(item);
+
+        if(item.getItemId() == R.id.bidask){
+            Intent intent = new Intent(MainActivity.this, BidAndAsk.class);
+            startActivity(intent);
+            return true;
         }
+        return false;
+    }
+
+    private static class DownloadHTMLMain extends DownloadHTML {
+
 
         @Override
         protected void onPostExecute(String s) {
@@ -139,6 +115,7 @@ public class MainActivity extends AppCompatActivity {
 
                 XAxis xAxis = lineChart.getXAxis();
                 xAxis.setValueFormatter(new IndexAxisValueFormatter(xvals));
+                xAxis.setLabelCount(3);
 
                 lineChart.setData(new LineData(lineDataSets));
                 lineChart.setPinchZoom(true);
@@ -161,7 +138,7 @@ public class MainActivity extends AppCompatActivity {
 
         lineChart = (LineChart) findViewById(R.id.line_chart);
 
-        DownloadHTML downloader = new DownloadHTML();
+        DownloadHTMLMain downloader = new DownloadHTMLMain();
         downloader.execute("https://www.bitstamp.net/api/v2/transactions/btcusd/");
     }
 
@@ -177,7 +154,7 @@ public class MainActivity extends AppCompatActivity {
     public void refresh(View view){
         lineChart.clear();
 
-        DownloadHTML downloader = new DownloadHTML();
+        DownloadHTMLMain downloader = new DownloadHTMLMain();
         downloader.execute("https://www.bitstamp.net/api/v2/transactions/btcusd/");
 
         toaster("Refresh complete", false);
